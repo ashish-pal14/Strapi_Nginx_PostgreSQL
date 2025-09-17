@@ -1,61 +1,117 @@
-# 🚀 Getting started with Strapi
+# Strapi Project Setup with Docker, Postgres, and Nginx
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/dev-docs/cli) (CLI) which lets you scaffold and manage your project in seconds.
-
-### `develop`
-
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)
-
-```
-npm run develop
-# or
-yarn develop
-```
-
-### `start`
-
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-start)
-
-```
-npm run start
-# or
-yarn start
-```
-
-### `build`
-
-Build your admin panel. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-build)
-
-```
-npm run build
-# or
-yarn build
-```
-
-## ⚙️ Deployment
-
-Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
-
-```
-yarn strapi deploy
-```
-
-## 📚 Learn more
-
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://strapi.io/blog) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
-
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
-
-## ✨ Community
-
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
+This project contains a **Strapi v5** application configured with **PostgreSQL** as the database and **Nginx** as a reverse proxy. The setup uses Docker and Docker Compose for containerization.
 
 ---
+## Prerequisites
 
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+- Docker (≥ 20.x)
+- Docker Compose (≥ 2.x)
+- Node.js (≥ 18)
+- npm (≥ 9)
+- Git
+
+---Docker Setup
+Dockerfile (my-app/Dockerfile)
+# Use official Node.js 18 image
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Enable Yarn
+RUN corepack enable && corepack prepare yarn@4.5.0 --activate
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy the rest of the application
+COPY . .
+
+# Expose Strapi port
+EXPOSE 1337
+
+# Start Strapi
+CMD ["npm", "run", "develop"]
+
+Nginx Configuration (my-app/nginx.conf)
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://strapi-app:1337;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+Docker Compose (my-app/docker-compose.yml)
+services:
+  strapi-app:
+    build: .
+    container_name: strapi-app
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_NAME: strapidb
+      DATABASE_HOST: strapi-postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: yourpassword
+    ports:
+      - "1337:1337"
+    depends_on:
+      - strapi-postgres
+    networks:
+      - strapi-net
+
+  strapi-postgres:
+    image: postgres:15
+    container_name: strapi-postgres
+    environment:
+      POSTGRES_DB: strapidb
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: yourpassword
+    volumes:
+      - strapi_postgres_data:/var/lib/postgresql/data
+    networks:
+      - strapi-net
+
+  strapi-nginx:
+    image: nginx:latest
+    container_name: strapi-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - strapi-app
+    networks:
+      - strapi-net
+
+networks:
+  strapi-net:
+
+volumes:
+  strapi_postgres_data:
+
+Running the Application
+
+Build and start containers:
+
+docker-compose up --build -d
+
+
+Check running containers:
+
+docker ps
+
+
+Access the application:
+
+Strapi Admin: http://localhost:1337/admin
+
+Nginx proxy: http://localhost/
