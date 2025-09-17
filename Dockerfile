@@ -28,7 +28,7 @@ WORKDIR /src/strapi
 #Copy only what is needed for production:
 COPY --from=build /src/strapi/package*.json ./
 # COPY --from=build /usr/src/strapi/node_modules ./node_modules
-# COPY --from=build /src/strapi/build ./build
+COPY --from=build /src/strapi/build ./build
 COPY --from=build /src/strapi/config ./config
 COPY --from=build /src/strapi/src ./src
 COPY --from=build /src/strapi/public ./public
