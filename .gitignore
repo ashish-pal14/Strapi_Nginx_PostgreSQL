@@ -129,3 +129,24 @@ dist
 build
 .strapi-updater.json
 .strapi-cloud.json
+
+#----------------########-------------
+# Build and cache
+.cache
+build
+dist
+
+# Git & IDE
+.git
+.gitignore
+.dockerignore
+.vscode
+.idea
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Env files (don’t bake secrets into the image!)
+.env
+.env.*.local
