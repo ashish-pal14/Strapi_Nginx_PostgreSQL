@@ -16,7 +16,11 @@ RUN npm install
 COPY . .
 
 #Build Strapi admin panel -
+<<<<<<< HEAD
 RUN npm run build
+=======
+RUN npm run develop
+>>>>>>> 4a420c1ac40ba137fb5fded19c55f09dd4316134
 
 
 
@@ -40,4 +44,8 @@ ENV PORT=1337
 EXPOSE ${PORT}
 
 
+<<<<<<< HEAD
 CMD [ "npm", "run", "start" ]
+=======
+CMD [ "npm", "start" ]
+>>>>>>> 4a420c1ac40ba137fb5fded19c55f09dd4316134
